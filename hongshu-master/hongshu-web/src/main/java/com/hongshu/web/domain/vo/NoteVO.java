@@ -1,4 +1,4 @@
-﻿package com.hongshu.web.domain.vo;
+package com.hongshu.web.domain.vo;
 
 import com.hongshu.web.domain.entity.WebTag;
 import lombok.Data;
