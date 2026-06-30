@@ -1,6 +1,6 @@
 import { router } from '@kit.ArkUI';
 import { ChatApi } from '../../api/ChatApi';
-import { ChatMessage, ChatRecordPage } from '../../model/Chat';
+import { ChatMessage } from '../../model/Chat';
 import { TokenManager } from '../../common/TokenManager';
 import { common } from '@kit.AbilityKit';
 
@@ -30,9 +30,8 @@ struct ChatPage {
     if (!this.chatUserUid) return;
     try {
       const res = await ChatApi.getAllChatRecord(1, 100, this.chatUserUid);
-      if (res.code === 200 && res.data) {
-        const d: ChatRecordPage = res.data as ChatRecordPage;
-        this.messages = (d.records ?? []).reverse();
+      if (res.code === 200 && res.data && res.data.records) {
+        this.messages = res.data.records.reverse();
       }
     } catch (e) {}
   }

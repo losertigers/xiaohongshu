@@ -35,19 +35,19 @@ struct MinePage {
           Column() {
             Text(this.trendCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
             Text('作品').fontSize(12).fontColor('#999').margin({ top: 4 })
-          }.layoutWeight(1)
+          }.layoutWeight(1).onClick(() => { router.pushUrl({ url: 'pages/user/MyNotes' }); })
           Column() {
             Text(this.fansCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
             Text('粉丝').fontSize(12).fontColor('#999').margin({ top: 4 })
-          }.layoutWeight(1)
+          }.layoutWeight(1).onClick(() => { router.pushUrl({ url: 'pages/user/FansList' }); })
           Column() {
             Text(this.followCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
             Text('关注').fontSize(12).fontColor('#999').margin({ top: 4 })
-          }.layoutWeight(1)
+          }.layoutWeight(1).onClick(() => { router.pushUrl({ url: 'pages/user/FollowingList' }); })
           Column() {
             Text(this.likeCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
             Text('获赞').fontSize(12).fontColor('#999').margin({ top: 4 })
-          }.layoutWeight(1)
+          }.layoutWeight(1).onClick(() => { router.pushUrl({ url: 'pages/message/LikeList' }); })
         }.width('100%').height(70).backgroundColor('#fff').margin({ top: 1 })
       } else {
         Row() {
@@ -58,7 +58,7 @@ struct MinePage {
       }
       List({ space: 0 }) {
         ListItem() { this.menuItem('我的专辑', () => {}) }
-        ListItem() { this.menuItem('浏览记录', () => {}) }
+        ListItem() { this.menuItem('浏览记录', () => { router.pushUrl({ url: 'pages/user/BrowseRecord' }); }) }
         ListItem() { this.menuItem('编辑资料', () => { router.pushUrl({ url: 'pages/userinfo/UserInfo' }); }) }
         ListItem() { this.menuItem('设置', () => { router.pushUrl({ url: 'pages/setting/Setting' }); }) }
       }.width('100%').margin({ top: 12 })
@@ -163,9 +163,9 @@ struct MainPage {
        .onClick(() => { router.pushUrl({ url: 'pages/search/Search' }); })
       Scroll() {
         Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.SpaceBetween }) {
-          ForEach(this.noteList, (note: NoteItem) => {
+          ForEach(this.noteList, (note: NoteItem, index: number) => {
             this.noteCard(note)
-          })
+          }, (note: NoteItem, index: number) => index.toString())
         }.width('100%').padding(8)
       }.width('100%').layoutWeight(1).onReachEnd(() => { this.loadNotes(); })
     }.width('100%').height('100%').backgroundColor('#f5f5f5')
@@ -176,7 +176,7 @@ struct MainPage {
       Image(note.noteCover && note.noteCover.length > 0 ? note.noteCover : $r('app.media.startIcon'))
         .width('100%').height(note.noteCoverHeight > 0 ? note.noteCoverHeight : 200)
         .objectFit(ImageFit.Cover).borderRadius(8)
-        .onClick(() => { router.pushUrl({ url: 'pages/note/NoteDetail?noteId=' + note.id }); })
+        .onClick(() => { router.pushUrl({ url: 'pages/note/NoteDetail', params: { noteId: note.id } }); })
       Text(note.title).fontSize(14).fontWeight(FontWeight.Medium).maxLines(2)
         .textOverflow({ overflow: TextOverflow.Ellipsis }).margin({ top: 6 }).width('100%')
       Row() {
@@ -216,10 +216,10 @@ struct MainPage {
     Column() {
       Text('消息').fontSize(20).fontWeight(FontWeight.Bold).margin({ top: 16, left: 16 })
       List({ space: 8 }) {
-        ListItem() { this.msgItem('私信', () => { router.pushUrl({ url: 'pages/chat/Chat' }); }) }
-        ListItem() { this.msgItem('评论', () => {}) }
-        ListItem() { this.msgItem('点赞收藏', () => {}) }
-        ListItem() { this.msgItem('新关注', () => {}) }
+        ListItem() { this.msgItem('私信', () => { router.pushUrl({ url: 'pages/message/ChatList' }); }) }
+        ListItem() { this.msgItem('评论', () => { router.pushUrl({ url: 'pages/message/CommentList' }); }) }
+        ListItem() { this.msgItem('点赞收藏', () => { router.pushUrl({ url: 'pages/message/LikeList' }); }) }
+        ListItem() { this.msgItem('新关注', () => { router.pushUrl({ url: 'pages/message/FollowerList' }); }) }
       }.width('100%').padding(12)
     }.width('100%').height('100%').backgroundColor('#f5f5f5')
   }

@@ -8,6 +8,14 @@
     "pages/search/Search",
     "pages/publish/Publish",
     "pages/chat/Chat",
+    "pages/message/ChatList",
+    "pages/message/CommentList",
+    "pages/message/LikeList",
+    "pages/message/FollowerList",
+    "pages/user/BrowseRecord",
+    "pages/user/MyNotes",
+    "pages/user/FansList",
+    "pages/user/FollowingList",
     "pages/setting/Setting",
     "pages/userinfo/UserInfo"
   ]

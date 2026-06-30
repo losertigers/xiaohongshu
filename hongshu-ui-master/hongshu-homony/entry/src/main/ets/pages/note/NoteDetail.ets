@@ -3,8 +3,11 @@ import { promptAction } from '@kit.ArkUI';
 import { NoteApi } from '../../api/NoteApi';
 import { CommentApi } from '../../api/CommentApi';
 import { LikeApi } from '../../api/LikeApi';
+import { FollowApi } from '../../api/FollowApi';
 import { NoteItem } from '../../model/Note';
 import { CommentItem, CommentPage } from '../../model/Comment';
+import { TokenManager } from '../../common/TokenManager';
+import { common } from '@kit.AbilityKit';
 
 @Entry
 @Component
@@ -14,12 +17,28 @@ struct NoteDetailPage {
   @State commentText: string = '';
   @State images: string[] = [];
   @State currentIdx: number = 0;
+  @State isFollowed: boolean = false;
+  @State currentUid: string = '';
   private noteId: string = '';
+  private context = getContext(this) as common.UIAbilityContext;
 
   aboutToAppear() {
     const params: Record<string, string> = router.getParams() as object as Record<string, string>;
     this.noteId = params?.['noteId'] ?? '';
-    if (this.noteId) { this.loadNote(); this.loadComments(); }
+    if (this.noteId) {
+      this.loadCurrentUser();
+      this.loadNote();
+      this.loadComments();
+    }
+  }
+
+  async loadCurrentUser() {
+    this.currentUid = await TokenManager.getUserId(this.context);
+  }
+
+  getSafeImage(url: string): string | Resource {
+    if (url && url.length > 0) { return url; }
+    return $r('app.media.startIcon');
   }
 
   async loadNote() {
@@ -31,8 +50,47 @@ struct NoteDetailPage {
           const parsed: string[] = JSON.parse(this.note.urls) as string[];
           this.images = parsed;
         }
+        // Check follow status
+        if (this.note.uid && this.note.uid !== this.currentUid) {
+          this.checkFollow();
+        }
       }
     } catch (e) {}
+  }
+
+  async checkFollow() {
+    try {
+      const res = await FollowApi.isFollow(this.note.uid);
+      if (res.code === 200) {
+        this.isFollowed = res.data === true;
+      }
+    } catch (e) {}
+  }
+
+  async toggleFollow() {
+    if (!this.note.uid) return;
+    try {
+      if (this.isFollowed) {
+        const res = await FollowApi.clearFollow(this.note.uid);
+        if (res && res.code === 200) {
+          this.isFollowed = false;
+          promptAction.showToast({ message: '已取消关注' });
+        } else {
+          promptAction.showToast({ message: res?.message || '取消关注失败' });
+        }
+      } else {
+        const res = await FollowApi.followUser(this.note.uid);
+        if (res && res.code === 200) {
+          this.isFollowed = true;
+          promptAction.showToast({ message: '已关注' });
+        } else {
+          promptAction.showToast({ message: res?.message || '关注失败' });
+        }
+      }
+    } catch (e) {
+      const errMsg = (e instanceof Error) ? e.message : '未知错误';
+      promptAction.showToast({ message: '操作失败：' + errMsg });
+    }
   }
 
   async loadComments() {
@@ -47,17 +105,40 @@ struct NoteDetailPage {
 
   async doComment() {
     if (!this.commentText.trim()) { promptAction.showToast({ message: '请输入评论' }); return; }
+    if (!this.currentUid) { promptAction.showToast({ message: '请先登录' }); return; }
     try {
-      await CommentApi.saveComment({ nid: this.noteId, content: this.commentText });
-      this.commentText = '';
-      promptAction.showToast({ message: '评论成功' });
-      this.loadComments();
-    } catch (e) { promptAction.showToast({ message: '评论失败' }); }
+      const res = await CommentApi.saveComment({
+        nid: this.noteId,
+        noteUid: this.note.uid,
+        content: this.commentText,
+        pid: '0',
+        replyId: '0',
+        replyUid: '0',
+        level: 1
+      });
+      if (res && res.code === 200) {
+        this.commentText = '';
+        promptAction.showToast({ message: '评论成功' });
+        this.loadComments();
+      } else {
+        promptAction.showToast({ message: res?.message || '评论失败' });
+      }
+    } catch (e) {
+      const errMsg = (e instanceof Error) ? e.message : '未知错误';
+      promptAction.showToast({ message: '评论失败：' + errMsg });
+    }
   }
 
   async doLike() {
+    if (!this.currentUid) { promptAction.showToast({ message: '请先登录' }); return; }
     try {
-      await LikeApi.likeOrCollectionByDTO({ likeOrCollectionId: this.noteId, type: 1 });
+      // 对齐安卓端字段
+      await LikeApi.likeOrCollectionByDTO({
+        uid: this.currentUid,
+        type: 1,
+        likeOrCollectionId: this.noteId,
+        publishUid: this.note.uid
+      });
       this.note.isLike = !this.note.isLike;
       this.note.likeCount += this.note.isLike ? 1 : -1;
     } catch (e) {}
@@ -67,46 +148,54 @@ struct NoteDetailPage {
     Column() {
       Row() {
         Text('<').fontSize(20).onClick(() => { router.back(); })
-        Text(this.note.username).fontSize(16).fontWeight(FontWeight.Medium).margin({ left: 16 })
+        Text(this.note.username || '笔记详情').fontSize(16).fontWeight(FontWeight.Medium).margin({ left: 16 })
       }.width('100%').height(48).padding({ left: 16 }).alignItems(VerticalAlign.Center)
       Scroll() {
         Column() {
           if (this.images.length > 0) {
             Swiper() {
-              ForEach(this.images, (url: string) => {
-                Image(url).width('100%').aspectRatio(1).objectFit(ImageFit.Cover)
-              })
+              ForEach(this.images, (url: string, index: number) => {
+                Image(this.getSafeImage(url)).width('100%').aspectRatio(1).objectFit(ImageFit.Cover)
+              }, (url: string, index: number) => index.toString())
             }.width('100%').aspectRatio(1).index(this.currentIdx)
              .onChange((index: number) => { this.currentIdx = index; })
-          } else if (this.note.noteCover) {
+          } else if (this.note.noteCover && this.note.noteCover.length > 0) {
             Image(this.note.noteCover).width('100%').aspectRatio(1).objectFit(ImageFit.Cover)
           }
           Text(this.note.title).fontSize(20).fontWeight(FontWeight.Bold)
             .margin({ top: 12, left: 16, right: 16 }).width('100%')
           Text(this.note.content).fontSize(14).fontColor('#333')
             .margin({ top: 8, left: 16, right: 16 }).width('100%')
+          // Author info + follow button
           Row() {
-            Image(this.note.avatar).width(36).height(36).borderRadius(18)
-            Text(this.note.username).fontSize(14).fontWeight(FontWeight.Medium).margin({ left: 8 })
-          }.padding(16).width('100%')
+            Image(this.getSafeImage(this.note.avatar)).width(36).height(36).borderRadius(18).objectFit(ImageFit.Cover)
+            Text(this.note.username).fontSize(14).fontWeight(FontWeight.Medium).margin({ left: 8 }).layoutWeight(1)
+            if (this.note.uid && this.note.uid !== this.currentUid) {
+              Button(this.isFollowed ? '已关注' : '关注')
+                .height(30).fontSize(13).borderRadius(15)
+                .backgroundColor(this.isFollowed ? '#f0f0f0' : '#FF2442')
+                .fontColor(this.isFollowed ? '#666' : Color.White)
+                .onClick(() => { this.toggleFollow(); })
+            }
+          }.padding(16).width('100%').alignItems(VerticalAlign.Center)
           Divider()
           Text('评论 (' + this.commentList.length + ')').fontSize(16).fontWeight(FontWeight.Bold)
             .margin({ top: 12, left: 16, bottom: 8 })
-          ForEach(this.commentList, (comment: CommentItem) => {
+          ForEach(this.commentList, (comment: CommentItem, index: number) => {
             Row() {
-              Image(comment.avatar).width(32).height(32).borderRadius(16)
+              Image(this.getSafeImage(comment.avatar)).width(32).height(32).borderRadius(16).objectFit(ImageFit.Cover)
               Column() {
                 Text(comment.username).fontSize(13).fontColor('#999')
                 Text(comment.content).fontSize(14).margin({ top: 4 })
               }.alignItems(HorizontalAlign.Start).margin({ left: 8 }).layoutWeight(1)
             }.padding({ left: 16, right: 16, top: 8, bottom: 8 }).width('100%')
-          })
+          }, (comment: CommentItem, index: number) => index.toString())
         }
       }.layoutWeight(1).width('100%')
       Row() {
         TextInput({ placeholder: '说点什么...', text: this.commentText })
           .layoutWeight(1).height(36).borderRadius(18).onChange((v: string) => { this.commentText = v; })
-        Text(this.note.isLike ? '❤' + this.note.likeCount : '♡' + this.note.likeCount)
+        Text(this.note.isLike ? '❤ ' + this.note.likeCount : '♡ ' + this.note.likeCount)
           .fontSize(14).margin({ left: 12 }).onClick(() => { this.doLike(); })
         Button('发送').height(36).fontSize(13).borderRadius(18)
           .backgroundColor('#FF2442').fontColor(Color.White).margin({ left: 8 })

@@ -91,9 +91,9 @@ public class WebEsNoteServiceImpl extends ServiceImpl<WebNoteMapper, WebNote> im
                 builder.query(h -> h.match(m -> m.field("cpid").query(esNoteDTO.getCpid())));
             }
 
-            if (esNoteDTO.getType() == 1) {
+            if (esNoteDTO.getType() != null && esNoteDTO.getType() == 1) {
                 builder.sort(o -> o.field(f -> f.field("likeCount").order(SortOrder.Desc)));
-            } else if (esNoteDTO.getType() == 2) {
+            } else if (esNoteDTO.getType() != null && esNoteDTO.getType() == 2) {
                 builder.sort(o -> o.field(f -> f.field("time").order(SortOrder.Desc)));
             }
             builder.from((int) (currentPage - 1) * (int) pageSize);
