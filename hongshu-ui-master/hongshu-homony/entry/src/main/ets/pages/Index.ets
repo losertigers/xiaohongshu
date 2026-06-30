@@ -8,6 +8,71 @@ import { NoteItem } from '../model/Note';
 import { UserInfo } from '../model/User';
 import { common } from '@kit.AbilityKit';
 
+@Component
+struct MinePage {
+  @Prop isLoggedIn: boolean = false;
+  @Prop avatar: string = '';
+  @Prop username: string = '';
+  @Prop description: string = '';
+  @Prop trendCount: number = 0;
+  @Prop fansCount: number = 0;
+  @Prop followCount: number = 0;
+  @Prop likeCount: number = 0;
+
+  build() {
+    Column() {
+      if (this.isLoggedIn) {
+        Row() {
+          Image(this.avatar && this.avatar.length > 0 ? this.avatar : $r('app.media.startIcon'))
+            .width(60).height(60).borderRadius(30).objectFit(ImageFit.Cover)
+          Column() {
+            Text(this.username || '用户').fontSize(18).fontWeight(FontWeight.Bold)
+            Text(this.description || '这个人很懒，什么都没写').fontSize(13).fontColor('#999').margin({ top: 4 })
+          }.margin({ left: 16 }).layoutWeight(1).alignItems(HorizontalAlign.Start)
+        }.width('100%').height(100).padding({ left: 20, right: 20 }).backgroundColor('#fff')
+         .alignItems(VerticalAlign.Center)
+        Row() {
+          Column() {
+            Text(this.trendCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
+            Text('作品').fontSize(12).fontColor('#999').margin({ top: 4 })
+          }.layoutWeight(1)
+          Column() {
+            Text(this.fansCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
+            Text('粉丝').fontSize(12).fontColor('#999').margin({ top: 4 })
+          }.layoutWeight(1)
+          Column() {
+            Text(this.followCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
+            Text('关注').fontSize(12).fontColor('#999').margin({ top: 4 })
+          }.layoutWeight(1)
+          Column() {
+            Text(this.likeCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
+            Text('获赞').fontSize(12).fontColor('#999').margin({ top: 4 })
+          }.layoutWeight(1)
+        }.width('100%').height(70).backgroundColor('#fff').margin({ top: 1 })
+      } else {
+        Row() {
+          Text('登录/注册').fontSize(20).fontWeight(FontWeight.Bold).fontColor('#FF2442')
+            .onClick(() => { router.pushUrl({ url: 'pages/login/Login' }); })
+        }.width('100%').height(120).padding({ left: 20 }).backgroundColor('#fff')
+         .alignItems(VerticalAlign.Center)
+      }
+      List({ space: 0 }) {
+        ListItem() { this.menuItem('我的专辑', () => {}) }
+        ListItem() { this.menuItem('浏览记录', () => {}) }
+        ListItem() { this.menuItem('编辑资料', () => { router.pushUrl({ url: 'pages/userinfo/UserInfo' }); }) }
+        ListItem() { this.menuItem('设置', () => { router.pushUrl({ url: 'pages/setting/Setting' }); }) }
+      }.width('100%').margin({ top: 12 })
+    }.width('100%').height('100%').backgroundColor('#f5f5f5')
+  }
+
+  @Builder menuItem(title: string, onClick: () => void) {
+    Row() {
+      Text(title).fontSize(15).layoutWeight(1)
+      Text('>').fontSize(14).fontColor('#ccc')
+    }.width('100%').height(52).padding({ left: 20, right: 20 }).backgroundColor('#fff').onClick(onClick)
+  }
+}
+
 @Entry
 @Component
 struct MainPage {
@@ -62,7 +127,6 @@ struct MainPage {
         .fontColor(this.currentIndex === index ? '#FF2442' : '#999')
         .fontWeight(this.currentIndex === index ? FontWeight.Bold : FontWeight.Normal)
     }.width('100%').height('100%').justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
-     .onClick(() => { this.currentIndex = index; })
   }
 
   build() {
@@ -72,7 +136,18 @@ struct MainPage {
         TabContent() { this.discoverContent() }.tabBar(this.tabBuilder('动态', 1))
         TabContent() { this.publishContent() }.tabBar(this.tabBuilder('发布', 2))
         TabContent() { this.messageContent() }.tabBar(this.tabBuilder('消息', 3))
-        TabContent() { this.mineContent() }.tabBar(this.tabBuilder('我', 4))
+        TabContent() {
+          MinePage({
+            isLoggedIn: this.isLoggedIn,
+            avatar: this.userInfo.avatar,
+            username: this.userInfo.username,
+            description: this.userInfo.description,
+            trendCount: this.userInfo.trendCount,
+            fansCount: this.userInfo.fansCount,
+            followCount: this.userInfo.followCount,
+            likeCount: this.userInfo.likeCount
+          })
+        }.tabBar(this.tabBuilder('我', 4))
       }.onChange((index: number) => { this.currentIndex = index; })
        .barHeight(56).scrollable(false).barMode(BarMode.Fixed)
        .width('100%').layoutWeight(1)
@@ -98,14 +173,15 @@ struct MainPage {
 
   @Builder noteCard(note: NoteItem) {
     Column() {
-      Image(this.getImageSrc(note.noteCover))
+      Image(note.noteCover && note.noteCover.length > 0 ? note.noteCover : $r('app.media.startIcon'))
         .width('100%').height(note.noteCoverHeight > 0 ? note.noteCoverHeight : 200)
         .objectFit(ImageFit.Cover).borderRadius(8)
         .onClick(() => { router.pushUrl({ url: 'pages/note/NoteDetail?noteId=' + note.id }); })
       Text(note.title).fontSize(14).fontWeight(FontWeight.Medium).maxLines(2)
         .textOverflow({ overflow: TextOverflow.Ellipsis }).margin({ top: 6 }).width('100%')
       Row() {
-        Image(this.getImageSrc(note.avatar)).width(20).height(20).borderRadius(10).objectFit(ImageFit.Cover)
+        Image(note.avatar && note.avatar.length > 0 ? note.avatar : $r('app.media.startIcon'))
+          .width(20).height(20).borderRadius(10).objectFit(ImageFit.Cover)
         Text(note.username).fontSize(12).fontColor('#666').margin({ left: 4 }).layoutWeight(1)
         Text(note.isLike ? '❤' : '♡').fontSize(14).fontColor(note.isLike ? 'red' : '#999')
         Text(note.likeCount.toString()).fontSize(12).fontColor('#999').margin({ left: 2 })
@@ -154,63 +230,5 @@ struct MainPage {
       Text('>').fontSize(14).fontColor('#ccc')
     }.width('100%').height(56).padding({ left: 16, right: 16 }).backgroundColor('#fff')
      .borderRadius(8).onClick(onClick)
-  }
-
-  getImageSrc(url: string): string | Resource {
-    if (url && url.length > 0) { return url; }
-    return $r('app.media.startIcon');
-  }
-
-  @Builder mineContent() {
-    Column() {
-      if (this.isLoggedIn) {
-        Row() {
-          Image(this.getImageSrc(this.userInfo.avatar)).width(60).height(60).borderRadius(30).objectFit(ImageFit.Cover)
-          Column() {
-            Text(this.userInfo.username || '用户').fontSize(18).fontWeight(FontWeight.Bold)
-            Text(this.userInfo.description || '这个人很懒，什么都没写').fontSize(13).fontColor('#999').margin({ top: 4 })
-          }.margin({ left: 16 }).layoutWeight(1).alignItems(HorizontalAlign.Start)
-        }.width('100%').height(100).padding({ left: 20, right: 20 }).backgroundColor('#fff')
-         .alignItems(VerticalAlign.Center)
-        Row() {
-          Column() {
-            Text(this.userInfo.trendCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
-            Text('作品').fontSize(12).fontColor('#999').margin({ top: 4 })
-          }.layoutWeight(1)
-          Column() {
-            Text(this.userInfo.fansCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
-            Text('粉丝').fontSize(12).fontColor('#999').margin({ top: 4 })
-          }.layoutWeight(1)
-          Column() {
-            Text(this.userInfo.followCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
-            Text('关注').fontSize(12).fontColor('#999').margin({ top: 4 })
-          }.layoutWeight(1)
-          Column() {
-            Text(this.userInfo.likeCount.toString()).fontSize(16).fontWeight(FontWeight.Bold)
-            Text('获赞').fontSize(12).fontColor('#999').margin({ top: 4 })
-          }.layoutWeight(1)
-        }.width('100%').height(70).backgroundColor('#fff').margin({ top: 1 })
-      } else {
-        Row() {
-          Column() {
-            Text('登录/注册').fontSize(20).fontWeight(FontWeight.Bold).fontColor('#FF2442')
-              .onClick(() => { router.pushUrl({ url: 'pages/login/Login' }); })
-          }.margin({ left: 20 })
-        }.width('100%').height(120).backgroundColor('#fff').alignItems(VerticalAlign.Center)
-      }
-      List({ space: 0 }) {
-        ListItem() { this.menuItem('我的专辑', () => {}) }
-        ListItem() { this.menuItem('浏览记录', () => {}) }
-        ListItem() { this.menuItem('编辑资料', () => { router.pushUrl({ url: 'pages/userinfo/UserInfo' }); }) }
-        ListItem() { this.menuItem('设置', () => { router.pushUrl({ url: 'pages/setting/Setting' }); }) }
-      }.width('100%').margin({ top: 12 })
-    }.width('100%').height('100%').backgroundColor('#f5f5f5')
-  }
-
-  @Builder menuItem(title: string, onClick: () => void) {
-    Row() {
-      Text(title).fontSize(15).layoutWeight(1)
-      Text('>').fontSize(14).fontColor('#ccc')
-    }.width('100%').height(52).padding({ left: 20, right: 20 }).backgroundColor('#fff').onClick(onClick)
   }
 }
