@@ -1,0 +1,8 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "来因LiveIn - 仿小红书鸿蒙版" },
+    { "name": "EntryAbility_desc", "value": "来因LiveIn主模块" },
+    { "name": "EntryAbility_label", "value": "来因LiveIn" },
+    { "name": "app_name", "value": "来因LiveIn" }
+  ]
+}
