@@ -17,15 +17,19 @@ export const options = reactive({
   // 唯一key值
   rowKey: "id",
   // 卡片之间的间隙
-  gutter: 10,
+  gutter: 16,
   // 是否有周围的gutter
   hasAroundGutter: false,
   // 卡片在PC上的宽度
-  width: 240,
+  width: 260,
   // 自定义行显示个数，主要用于对移动端的适配
   breakpoints: {
+    2400: {
+      // 当屏幕宽度小于等于2400
+      rowPerView: 6,
+    },
     2000: {
-      // 当屏幕宽度小于等于1200
+      // 当屏幕宽度小于等于2000
       rowPerView: 5,
     },
     1200: {
@@ -33,7 +37,7 @@ export const options = reactive({
       rowPerView: 4,
     },
     1000: {
-      // 当屏幕宽度小于等于800
+      // 当屏幕宽度小于等于1000
       rowPerView: 3,
     },
   },

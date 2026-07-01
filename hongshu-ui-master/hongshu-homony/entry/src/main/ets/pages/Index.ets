@@ -2,6 +2,7 @@ import { router } from '@kit.ArkUI';
 import { promptAction } from '@kit.ArkUI';
 import { TokenManager } from '../common/TokenManager';
 import { HttpUtil } from '../common/HttpUtil';
+import { Constants } from '../common/Constants';
 import { NoteApi } from '../api/NoteApi';
 import { UserApi } from '../api/UserApi';
 import { NoteItem } from '../model/Note';
@@ -19,11 +20,19 @@ struct MinePage {
   @Prop followCount: number = 0;
   @Prop likeCount: number = 0;
 
+  getSafeImage(url: string): string | Resource {
+    if (url && url.length > 0) {
+      if (url.startsWith('http')) { return url; }
+      return Constants.BASE_URL + url;
+    }
+    return $r('app.media.startIcon');
+  }
+
   build() {
     Column() {
       if (this.isLoggedIn) {
         Row() {
-          Image(this.avatar && this.avatar.length > 0 ? this.avatar : $r('app.media.startIcon'))
+          Image(this.getSafeImage(this.avatar))
             .width(60).height(60).borderRadius(30).objectFit(ImageFit.Cover)
           Column() {
             Text(this.username || '用户').fontSize(18).fontWeight(FontWeight.Bold)
@@ -84,6 +93,14 @@ struct MainPage {
   @State isLoggedIn: boolean = false;
   private context = getContext(this) as common.UIAbilityContext;
 
+  getSafeImage(url: string): string | Resource {
+    if (url && url.length > 0) {
+      if (url.startsWith('http')) { return url; }
+      return Constants.BASE_URL + url;
+    }
+    return $r('app.media.startIcon');
+  }
+
   aboutToAppear() { this.initLogin(); }
 
   async initLogin() {
@@ -102,9 +119,18 @@ struct MainPage {
 
   async loadUserInfo() {
     try {
+      const userId = await TokenManager.getUserId(this.context);
+      if (userId) {
+        const res = await UserApi.getUserById(userId);
+        if (res.code === 200 && res.data) {
+          this.userInfo = res.data;
+          await TokenManager.setUserInfo(this.context, JSON.stringify(this.userInfo));
+        }
+      }
+    } catch (e) {
       const infoStr = await TokenManager.getUserInfo(this.context);
       if (infoStr) { this.userInfo = JSON.parse(infoStr) as UserInfo; }
-    } catch (e) {}
+    }
   }
 
   async loadNotes() {
@@ -148,7 +174,10 @@ struct MainPage {
             likeCount: this.userInfo.likeCount
           })
         }.tabBar(this.tabBuilder('我', 4))
-      }.onChange((index: number) => { this.currentIndex = index; })
+      }.onChange((index: number) => {
+        this.currentIndex = index;
+        if (index === 4) { this.loadUserInfo(); }
+      })
        .barHeight(56).scrollable(false).barMode(BarMode.Fixed)
        .width('100%').layoutWeight(1)
     }.width('100%').height('100%').backgroundColor('#f5f5f5')
@@ -173,14 +202,14 @@ struct MainPage {
 
   @Builder noteCard(note: NoteItem) {
     Column() {
-      Image(note.noteCover && note.noteCover.length > 0 ? note.noteCover : $r('app.media.startIcon'))
+      Image(this.getSafeImage(note.noteCover))
         .width('100%').height(note.noteCoverHeight > 0 ? note.noteCoverHeight : 200)
         .objectFit(ImageFit.Cover).borderRadius(8)
         .onClick(() => { router.pushUrl({ url: 'pages/note/NoteDetail', params: { noteId: note.id } }); })
       Text(note.title).fontSize(14).fontWeight(FontWeight.Medium).maxLines(2)
         .textOverflow({ overflow: TextOverflow.Ellipsis }).margin({ top: 6 }).width('100%')
       Row() {
-        Image(note.avatar && note.avatar.length > 0 ? note.avatar : $r('app.media.startIcon'))
+        Image(this.getSafeImage(note.avatar))
           .width(20).height(20).borderRadius(10).objectFit(ImageFit.Cover)
         Text(note.username).fontSize(12).fontColor('#666').margin({ left: 4 }).layoutWeight(1)
         Text(note.isLike ? '❤' : '♡').fontSize(14).fontColor(note.isLike ? 'red' : '#999')

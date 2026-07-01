@@ -70,6 +70,9 @@ public class WebChatServiceImpl extends ServiceImpl<WebChatMapper, WebChat> impl
             case 1:
                 messageFactory = new ChatUserMessage(webSocketServer, this, userMapper, chatUserRelationMapper);
                 break;
+            case 2:
+                messageFactory = new ChatUserMessage(webSocketServer, this, userMapper, chatUserRelationMapper);
+                break;
             default:
                 break;
         }

@@ -149,14 +149,14 @@ es:
 
 # Oss配置
 oss:
-  type: 0 # 0：是本地存储，1：是七牛云存储
+  type: 1 # 0：是本地存储，1：是七牛云存储
 
 # 七牛云配置
 qiNiuYun:
-  domain:
-  accessKey:
-  secretKey:
-  bucketName:
+  domain: http://th4rglgny.hd-bkt.clouddn.com
+  accessKey: 2w5YGbho1xsIELF_YllcXeBR5KhaI5u3h0Wh2uHX
+  secretKey: DNnGonWoGkVBrTPgU1q5xWHbufYfUJjk1zo7YpAC
+  bucketName: tig
 
 # 文件上传路径
 file:

@@ -464,7 +464,7 @@ initData();
     transition:
       transform 0.4s ease 0s,
       width 0.4s ease 0s;
-    transform: translate(280px, 60px) scale(1);
+    transform: translate(356px, 60px) scale(1);
     overflow: visible;
 
     display: flex;

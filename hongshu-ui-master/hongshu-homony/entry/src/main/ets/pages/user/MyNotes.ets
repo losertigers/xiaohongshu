@@ -2,6 +2,7 @@ import { router } from '@kit.ArkUI';
 import { UserApi } from '../../api/UserApi';
 import { NoteItem } from '../../model/Note';
 import { TokenManager } from '../../common/TokenManager';
+import { Constants } from '../../common/Constants';
 import { common } from '@kit.AbilityKit';
 
 @Entry
@@ -23,7 +24,10 @@ struct MyNotesPage {
   }
 
   getSafeImage(url: string): string | Resource {
-    if (url && url.length > 0) { return url; }
+    if (url && url.length > 0) {
+      if (url.startsWith('http')) { return url; }
+      return Constants.BASE_URL + url;
+    }
     return $r('app.media.startIcon');
   }
 

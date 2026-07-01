@@ -38,14 +38,14 @@
         <ul class="channel-list">
           <li :class="activeLink == 0 ? 'active-channel' : ''" @click="toLink(0)">
             <a class="link-wrapper">
-              <House style="width: 1.3em; height: 1.3em; margin-right: 8px" /><span class="channel">发现</span>
+              <House style="width: 1.5em; height: 1.5em; margin-right: 8px" /><span class="channel">发现</span>
             </a>
           </li>
           <li :class="activeLink == 1 ? 'active-channel' : ''" @click="toLink(1)">
-            <Star style="width: 1.3em; height: 1.3em; margin-right: 8px" /><span class="channel"> 动态</span>
+            <Star style="width: 1.5em; height: 1.5em; margin-right: 8px" /><span class="channel"> 动态</span>
           </li>
           <li :class="activeLink == 2 ? 'active-channel' : ''" @click="toLink(2)">
-            <Bell style="width: 1.3em; height: 1.3em; margin-right: 8px" />
+            <Bell style="width: 1.5em; height: 1.5em; margin-right: 8px" />
 
             <el-badge is-dot class="item" v-if="messageCount > 0 && userInfo != null">
               <span class="channel"> 通知</span></el-badge
@@ -53,7 +53,7 @@
             <span class="channel" v-else>通知</span>
           </li>
           <li :class="activeLink == 3 ? 'active-channel' : ''" @click="toLink(3)">
-            <CirclePlus style="width: 1.3em; height: 1.3em; margin-right: 8px" /><span class="channel"> 发布</span>
+            <CirclePlus style="width: 1.5em; height: 1.5em; margin-right: 8px" /><span class="channel"> 发布</span>
           </li>
           <div v-if="userInfo == null">
             <el-button type="danger" round @click="login" class="custom-button">登录</el-button>
@@ -425,6 +425,9 @@ const connectWs = (uid: string) => {
     if (message.msgType === 1) {
       imStore.setMessage(message);
     }
+    if (message.msgType === 2) {
+      imStore.setMessage(message);
+    }
     if (message.msgType === 5) {
       const userList = message.content;
       imStore.setUserList(userList);
@@ -589,7 +592,7 @@ a {
 }
 
 .container {
-  max-width: 1728px;
+  max-width: 1920px;
   background-color: #fff;
   margin: 0 auto;
 
@@ -612,7 +615,7 @@ a {
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      max-width: 1728px;
+      max-width: 1920px;
       height: 72px;
       padding: 0 16px 0 24px;
       z-index: 10;
@@ -636,19 +639,19 @@ a {
         }
 
         @media screen and (min-width: 960px) and (max-width: 1191px) {
-          width: calc(-36px + 50vw);
+          width: calc(-40px + 55vw);
         }
 
         @media screen and (min-width: 1192px) and (max-width: 1423px) {
-          width: calc(-33.6px + 40vw);
+          width: calc(-38px + 44vw);
         }
 
-        @media screen and (min-width: 1424px) and (max-width: 1727px) {
-          width: calc(-42.66667px + 33.33333vw);
+        @media screen and (min-width: 1424px) and (max-width: 1919px) {
+          width: calc(-48px + 36vw);
         }
 
-        @media screen and (min-width: 1728px) {
-          width: 533.33333px;
+        @media screen and (min-width: 1920px) {
+          width: 600px;
         }
 
         .search-input {
@@ -704,22 +707,22 @@ a {
       }
 
       @media screen and (min-width: 960px) and (max-width: 1191px) {
-        width: calc(-18px + 25vw);
+        width: calc(-24px + 29vw);
         margin-left: 12px;
       }
 
       @media screen and (min-width: 1192px) and (max-width: 1423px) {
-        width: calc(-16.8px + 20vw);
+        width: calc(-22px + 24vw);
         margin-left: 12px;
       }
 
-      @media screen and (min-width: 1424px) and (max-width: 1727px) {
-        width: calc(-21.33333px + 16.66667vw);
+      @media screen and (min-width: 1424px) and (max-width: 1919px) {
+        width: calc(-28px + 19vw);
         margin-left: 16px;
       }
 
-      @media screen and (min-width: 1728px) {
-        width: 266.66667px;
+      @media screen and (min-width: 1920px) {
+        width: 340px;
         margin-left: 16px;
       }
 
@@ -748,7 +751,7 @@ a {
 
         li {
           padding-left: 16px;
-          min-height: 48px;
+          min-height: 52px;
           display: flex;
           align-items: center;
           cursor: pointer;
@@ -758,7 +761,7 @@ a {
           .link-wrapper {
             display: flex;
             width: 100%;
-            height: 48px;
+            height: 52px;
             align-items: center;
           }
 
@@ -776,9 +779,9 @@ a {
         }
 
         .channel {
-          font-size: 16px;
+          font-size: 20px;
           font-weight: 600;
-          margin-left: 12px;
+          margin-left: 14px;
           color: #333;
         }
       }
@@ -918,19 +921,19 @@ a {
 
     .main-content {
       @media screen and (min-width: 960px) and (max-width: 1191px) {
-        padding-left: calc(-6px + 25vw);
+        padding-left: calc(-8px + 29vw);
       }
 
       @media screen and (min-width: 1192px) and (max-width: 1423px) {
-        padding-left: calc(-4.8px + 20vw);
+        padding-left: calc(-6px + 24vw);
       }
 
-      @media screen and (min-width: 1424px) and (max-width: 1727px) {
-        padding-left: calc(-5.33333px + 16.66667vw);
+      @media screen and (min-width: 1424px) and (max-width: 1919px) {
+        padding-left: calc(-12px + 19vw);
       }
 
-      @media screen and (min-width: 1728px) {
-        padding-left: 282.66667px;
+      @media screen and (min-width: 1920px) {
+        padding-left: 356px;
       }
     }
   }

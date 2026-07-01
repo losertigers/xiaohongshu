@@ -85,8 +85,9 @@ import { getAllChatRecord, sendMsg } from "@/api/im";
 import { useUserStore } from "@/store/userStore";
 import { useImStore } from "@/store/imStore";
 import type { UploadProps } from "element-plus";
-import { convertImgToBase64 } from "@/utils/util";
 import { getRandomString } from "@/utils/util";
+import { baseURL } from "@/constant/constant";
+import axios from "axios";
 
 const imStore = useImStore();
 const userStore = useUserStore();
@@ -134,19 +135,34 @@ const close = () => {
   emit("clickChat", props.acceptUid);
 };
 
-// 选择图片
+// 选择图片并上传到OSS
 const handleChange: UploadProps["onChange"] = (uploadFile) => {
-  const imgSrc = URL.createObjectURL(uploadFile.raw!);
-  convertImgToBase64(
-    uploadFile.raw!,
-    (data: any) => {
-      document.getElementById("post-textarea")!.innerHTML +=
-        `<img src='${imgSrc}' text='${data}' style='width:3.75rem;height:3.75rem;object-fit: cover;'></img>`;
-    },
-    (error: any) => {
-      console.log("error", error);
-    }
-  );
+  // 上传图片到OSS
+  const formData = new FormData();
+  formData.append("file", uploadFile.raw!);
+  axios
+    .post(baseURL + "web/oss/save/0", formData, {
+      headers: {
+        accessToken: userStore.getToken(),
+        userId: userStore.getUserInfo().id,
+      },
+    })
+    .then((res: any) => {
+      const imageUrl = res.data.data;
+      // 直接发送图片消息
+      const message = {} as any;
+      message.id = getRandomString(12);
+      message.sendUid = currentUser.value.id;
+      message.acceptUid = acceptUser.value.id;
+      message.content = imageUrl;
+      message.msgType = 2;
+      message.chatType = 0;
+      message.isLoading = true;
+      sendMessage(message);
+    })
+    .catch((error: any) => {
+      console.log("图片上传失败", error);
+    });
 };
 
 const sendMessage = (message: any) => {
@@ -168,46 +184,24 @@ const submit = () => {
     return;
   }
 
-  const imgReg = /<img.*?(?:>|\/>)/gi;
-  const srcReg = /text=[\'\"]?([^\'\"]*)[\'\"]?/i;
-  // let params = new FormData();
-  // //注意此处对文件数组进行了参数循环添加
-  const _contentImg = htmlContent.match(imgReg);
+  // 提取纯文本内容
+  const content = htmlContent.replace(/<[^>]*>/g, "").trim();
+  if (content === "") {
+    document.getElementById("post-textarea")!.innerHTML = "";
+    return;
+  }
 
-  const replaceContent = htmlContent.replaceAll(imgReg, "#").replace(/<[^>]*>[^<]*(<[^>]*>)?/gi, "");
-  // 内容分割
-  const _splitContent = replaceContent.split("#");
+  //发送文字消息
+  const message = {} as any;
+  message.id = getRandomString(12);
+  message.sendUid = currentUser.value.id;
+  message.acceptUid = acceptUser.value.id;
+  message.content = content;
+  message.msgType = 1;
+  message.chatType = 0;
+  message.isLoading = true;
+  sendMessage(message);
 
-  _splitContent.forEach((item: string) => {
-    if (item === null || item === "") {
-      return;
-    }
-    //发送文字消息
-    const message = {} as any;
-    message.id = getRandomString(12);
-    message.sendUid = currentUser.value.id;
-    message.acceptUid = acceptUser.value.id;
-    message.content = item;
-    message.msgType = 1;
-    message.chatType = 0;
-    message.isLoading = true;
-    sendMessage(message);
-  });
-
-  // 图片分割
-  _contentImg?.forEach((item: any) => {
-    const src = item.match(srcReg);
-    const message = {} as any;
-    message.id = getRandomString(12);
-    message.sendUid = currentUser.value.id;
-    message.acceptUid = acceptUser.value.id;
-    message.content = src[1];
-    message.msgType = 2;
-    message.chatType = 0;
-    message.isLoading = true;
-    sendMessage(message);
-  });
-  // const content = htmlContent.replace(/<[^>]*>[^<]*(<[^>]*>)?/gi, "");
   document.getElementById("post-textarea")!.innerHTML = "";
 };
 

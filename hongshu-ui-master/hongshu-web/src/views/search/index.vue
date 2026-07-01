@@ -56,16 +56,16 @@
           :animation-duration="options.animationDuration"
           :animation-delay="options.animationDelay"
           :breakpoints="options.breakpoints"
-          style="min-width: 46.25rem"
+          style="min-width: 50rem"
         >
           <template #item="{ item }">
-            <el-skeleton style="width: 15rem" :loading="!item.isLoading" animated>
+            <el-skeleton style="width: 16.25rem" :loading="!item.isLoading" animated>
               <template #template>
                 <el-image
                   :src="item.noteCover"
                   :style="{
-                    width: '15rem',
-                    maxHeight: '18.75rem',
+                    width: '16.25rem',
+                    maxHeight: '21.25rem',
                     height: item.noteCoverHeight + 'px',
                     borderRadius: '.5rem',
                   }"
@@ -85,12 +85,12 @@
               </template>
 
               <template #default>
-                <div class="card" style="max-width: 15rem">
+                <div class="card" style="max-width: 16.25rem">
                   <el-image
                     :src="item.noteCover"
                     :style="{
-                      width: '15rem',
-                      maxHeight: '18.75rem',
+                      width: '16.25rem',
+                      maxHeight: '21.25rem',
                       height: item.noteCoverHeight + 'px',
                       borderRadius: '.5rem',
                     }"
@@ -521,6 +521,18 @@ initData();
     transition: width 0.5s;
     margin: 0 auto;
 
+    .card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+      }
+    }
+
     .feeds-loading {
       margin: 3vh;
       text-align: center;
@@ -533,8 +545,8 @@ initData();
     }
 
     .noteImg {
-      width: 15rem;
-      max-height: 18.75rem;
+      width: 16.25rem;
+      max-height: 21.25rem;
       object-fit: cover;
       border-radius: 0.5rem;
     }
@@ -550,7 +562,7 @@ initData();
         -webkit-line-clamp: 2;
         overflow: hidden;
         font-weight: 500;
-        font-size: 0.875rem;
+        font-size: 0.9375rem;
         line-height: 140%;
         color: #333;
       }
@@ -561,7 +573,7 @@ initData();
         justify-content: space-between;
         height: 1.25rem;
         color: rgba(51, 51, 51, 0.8);
-        font-size: 0.75rem;
+        font-size: 0.8125rem;
         transition: color 1s;
 
         .author {

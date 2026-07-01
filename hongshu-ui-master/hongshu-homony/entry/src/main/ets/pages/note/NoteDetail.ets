@@ -7,6 +7,7 @@ import { FollowApi } from '../../api/FollowApi';
 import { NoteItem } from '../../model/Note';
 import { CommentItem, CommentPage } from '../../model/Comment';
 import { TokenManager } from '../../common/TokenManager';
+import { Constants } from '../../common/Constants';
 import { common } from '@kit.AbilityKit';
 
 @Entry
@@ -37,7 +38,10 @@ struct NoteDetailPage {
   }
 
   getSafeImage(url: string): string | Resource {
-    if (url && url.length > 0) { return url; }
+    if (url && url.length > 0) {
+      if (url.startsWith('http')) { return url; }
+      return Constants.BASE_URL + url;
+    }
     return $r('app.media.startIcon');
   }
 
@@ -117,6 +121,10 @@ struct NoteDetailPage {
         level: 1
       });
       if (res && res.code === 200) {
+        const commentData: CommentItem = res.data;
+        if (commentData && commentData.id) {
+          await CommentApi.syncCommentByIds([commentData.id]);
+        }
         this.commentText = '';
         promptAction.showToast({ message: '评论成功' });
         this.loadComments();

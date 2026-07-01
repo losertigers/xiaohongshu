@@ -9,16 +9,16 @@
       :animation-duration="options.animationDuration"
       :animation-delay="options.animationDelay"
       :breakpoints="options.breakpoints"
-      style="min-width: 740px"
+      style="min-width: 800px"
     >
       <template #item="{ item }">
-        <el-skeleton style="width: 240px" :loading="!item.isLoading" animated>
+        <el-skeleton style="width: 260px" :loading="!item.isLoading" animated>
           <template #template>
             <el-image
               :src="item.noteCover"
               :style="{
-                width: '240px',
-                maxHeight: '300px',
+                width: '260px',
+                maxHeight: '340px',
                 height: item.noteCoverHeight + 'px',
                 borderRadius: '8px',
               }"
@@ -40,13 +40,13 @@
           </template>
 
           <template #default>
-            <div class="card" style="max-width: 240px">
+            <div class="card" style="max-width: 260px">
               <div class="image-container">
                 <el-image
                   :src="item.noteCover"
                   :style="{
-                    width: '240px',
-                    maxHeight: '300px',
+                    width: '260px',
+                    maxHeight: '340px',
                     height: item.noteCoverHeight + 'px',
                     borderRadius: '8px',
                   }"
@@ -222,14 +222,23 @@ onMounted(() => {
   margin: 0 auto;
 
   .noteImg {
-    width: 240px;
-    max-height: 300px;
+    width: 260px;
+    max-height: 340px;
     object-fit: cover;
     border-radius: 8px;
   }
 
   .card {
     position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
 
     .top-tag-area {
       position: absolute;
@@ -263,7 +272,7 @@ onMounted(() => {
       -webkit-line-clamp: 2;
       overflow: hidden;
       font-weight: 500;
-      font-size: 14px;
+      font-size: 15px;
       line-height: 140%;
       color: #333;
     }
@@ -274,7 +283,7 @@ onMounted(() => {
       justify-content: space-between;
       height: 20px;
       color: rgba(51, 51, 51, 0.8);
-      font-size: 12px;
+      font-size: 13px;
       transition: color 1s;
 
       .author {

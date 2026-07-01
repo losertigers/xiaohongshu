@@ -43,7 +43,7 @@ public class QiNiuYunUploadFile implements OssFactory {
     @Override
     public String save(MultipartFile file) {
         //构造一个带指定 Region 对象的配置类
-        Configuration cfg = new Configuration(Region.huabei());
+        Configuration cfg = new Configuration(Region.autoRegion());
         cfg.resumableUploadAPIVersion = Configuration.ResumableUploadAPIVersion.V2;// 指定分片上传版本
 
         UploadManager uploadManager = new UploadManager(cfg);
@@ -90,7 +90,7 @@ public class QiNiuYunUploadFile implements OssFactory {
     @Override
     public Boolean delete(String path) {
         String replaceFileName = path.replace("http://" + domain + "/", "");
-        Configuration cfg = new Configuration(Region.beimei());
+        Configuration cfg = new Configuration(Region.autoRegion());
 
         Auth auth = Auth.create(accessKey, secretKey);
         BucketManager bucketManager = new BucketManager(auth, cfg);

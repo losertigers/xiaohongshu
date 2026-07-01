@@ -112,11 +112,11 @@
                   <span class="count">{{ userInfo.trendCount }}</span
                   ><span class="shows">作品</span>
                 </div>
-                <div>
+                <div class="clickable" @click="followListType = 1; followListVisible = true">
                   <span class="count">{{ userInfo.followerCount }}</span
                   ><span class="shows">关注</span>
                 </div>
-                <div>
+                <div class="clickable" @click="followListType = 0; followListVisible = true">
                   <span class="count">{{ userInfo.fanCount }}</span
                   ><span class="shows">粉丝</span>
                 </div>
@@ -167,6 +167,11 @@
       </Chat>
       <Note :type="type"> </Note>
     </div>
+    <FollowList
+      v-model:visible="followListVisible"
+      :uid="uid"
+      :list-type="followListType"
+    />
   </div>
 </template>
 
@@ -177,6 +182,7 @@ import { getUserById, updateUser } from "@/api/user";
 import Note from "@/components/Note.vue";
 import { useUserStore } from "@/store/userStore";
 import Chat from "@/components/Chat.vue";
+import FollowList from "@/views/user/follow-list.vue";
 import { followById, isFollow } from "@/api/follower";
 import { useRoute } from "vue-router";
 import { ElInput, ElMessage, UploadProps } from "element-plus";
@@ -200,6 +206,8 @@ const inputVisible = ref(false);
 const InputRef = ref<InstanceType<typeof ElInput>>();
 const inputTagValue = ref("");
 const fileAction = baseURL + "web/oss/save/1";
+const followListVisible = ref(false);
+const followListType = ref(1);
 
 const showInput = () => {
   inputVisible.value = true;
@@ -465,6 +473,15 @@ initData();
               justify-content: center;
               text-align: center;
               margin-right: 1rem;
+            }
+
+            .user-interactions > div.clickable {
+              cursor: pointer;
+              transition: color 0.2s;
+            }
+
+            .user-interactions > div.clickable:hover {
+              color: #ff2e4d;
             }
           }
         }

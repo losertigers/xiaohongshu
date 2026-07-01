@@ -55,3 +55,22 @@ export const getNoticeFollower = (currentPage: number, pageSize: number) => {
     method: "get",
   });
 };
+
+/**
+ * 获取关注/粉丝列表
+ * @param currentPage 当前页
+ * @param pageSize 分页数
+ * @param type 类型 0：粉丝 1：关注
+ * @param uid 目标用户id
+ * @returns
+ */
+export const getFriend = (currentPage: number, pageSize: number, type: number, uid?: string) => {
+  return request<any>({
+    url: `/web/follower/getFriend/${currentPage}/${pageSize}`,
+    method: "get",
+    params: {
+      type,
+      uid,
+    },
+  });
+};

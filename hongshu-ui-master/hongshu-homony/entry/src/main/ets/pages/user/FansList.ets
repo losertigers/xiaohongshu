@@ -29,10 +29,26 @@ struct FansListPage {
 
   async loadFans() {
     try {
-      // type=0: 粉丝（关注我的人）
-      const res = await FollowApi.getFriend(1, 50, 0);
+      // type=0: 粉丝（关注我的人），传递当前用户uid
+      const res = await FollowApi.getFriend(1, 50, 0, this.currentUid);
       if (res.code === 200 && res.data && res.data.records) {
-        this.fansList = res.data.records;
+        // 处理后端返回的字段映射
+        const list: FollowerItem[] = [];
+        for (let i = 0; i < res.data.records.length; i++) {
+          const item = res.data.records[i];
+          const newItem = new FollowerItem();
+          newItem.id = item.id;
+          newItem.uid = item.uid;
+          newItem.username = item.username;
+          newItem.avatar = item.avatar;
+          newItem.description = item.description;
+          newItem.isfollow = item.isFollow !== undefined ? item.isFollow : false;
+          newItem.fanCount = item.fanCount;
+          newItem.followerCount = item.followerCount;
+          newItem.likeCount = item.likeCount;
+          list.push(newItem);
+        }
+        this.fansList = list;
       }
     } catch (e) {
       const errMsg = (e instanceof Error) ? e.message : '未知错误';
@@ -60,6 +76,20 @@ struct FansListPage {
     }
   }
 
+  goToUserPage(uid: string) {
+    router.pushUrl({
+      url: 'pages/userinfo/UserInfo',
+      params: { uid: uid }
+    });
+  }
+
+  goToChat(uid: string) {
+    router.pushUrl({
+      url: 'pages/chat/Chat',
+      params: { uid: uid }
+    });
+  }
+
   build() {
     Column() {
       Row() {
@@ -74,10 +104,18 @@ struct FansListPage {
           ListItem() {
             Row() {
               Image(this.getSafeImage(item.avatar)).width(40).height(40).borderRadius(20).objectFit(ImageFit.Cover)
+                .onClick(() => { this.goToUserPage(item.uid); })
               Column() {
                 Text(item.username).fontSize(14).fontWeight(FontWeight.Medium)
                 Text(item.description || '').fontSize(12).fontColor('#999').margin({ top: 4 }).maxLines(1)
               }.alignItems(HorizontalAlign.Start).margin({ left: 12 }).layoutWeight(1)
+                .onClick(() => { this.goToUserPage(item.uid); })
+              Button('私信')
+                .height(30).fontSize(12).borderRadius(15)
+                .backgroundColor('#f0f0f0')
+                .fontColor('#666')
+                .margin({ right: 8 })
+                .onClick(() => { this.goToChat(item.uid); })
               Button(item.isfollow ? '已关注' : '回关')
                 .height(30).fontSize(12).borderRadius(15)
                 .backgroundColor(item.isfollow ? '#f0f0f0' : '#FF2442')
