@@ -42,7 +42,23 @@
           <template #default>
             <div class="card" style="max-width: 260px">
               <div class="image-container">
+                <video
+                  v-if="isVideoNote(item)"
+                  :src="getMediaUrl(item.urls)"
+                  :style="{
+                    width: '260px',
+                    maxHeight: '340px',
+                    height: item.noteCoverHeight + 'px',
+                    borderRadius: '8px',
+                    objectFit: 'cover',
+                  }"
+                  muted
+                  preload="metadata"
+                  @loadeddata="handleLoad(item)"
+                  @click="toMain(item.id)"
+                ></video>
                 <el-image
+                  v-else
                   :src="item.noteCover"
                   :style="{
                     width: '260px',
@@ -54,6 +70,7 @@
                   @click="toMain(item.id)"
                 >
                 </el-image>
+                <div v-if="isVideoNote(item)" class="video-overlay">▶</div>
                 <div v-if="item.auditStatus === '0'" class="overlay">审核中</div>
                 <div v-if="item.auditStatus === '2'" class="overlay not-passed">未通过⚠️</div>
               </div>
@@ -138,6 +155,25 @@ const handleLoad = (item: any) => {
   item.isLoading = true;
 };
 
+const getMediaUrl = (urls: string) => {
+  if (!urls) return "";
+  try {
+    const mediaList = JSON.parse(urls);
+    return mediaList && mediaList.length > 0 ? mediaList[0] : "";
+  } catch {
+    return "";
+  }
+};
+
+const isVideoUrl = (url: string) => {
+  return /\.(mp4|webm|ogg|mov|m4v|avi|flv|wmv)(\?.*)?$/i.test(url || "");
+};
+
+const isVideoNote = (item: any) => {
+  const mediaUrl = getMediaUrl(item.urls);
+  return item.noteType === "1" && isVideoUrl(mediaUrl);
+};
+
 const close = () => {
   mainShow.value = false;
 };
@@ -151,9 +187,18 @@ const toMain = (noteId: string) => {
 const setData = (res: any) => {
   const { records, total } = res.data;
   noteTotal.value = total;
-  // 过滤掉不是当前用户且状态“审核中”或“未通过”的记录
+  // 对于 type=1（作品）：只显示自己的作品或审核通过/未审核的
+  // 对于 type=2/3（点赞/收藏）：直接展示，不需要再按审核状态过滤
   const filteredRecords = records.filter((item: any) => {
+    if (props.type !== 1) {
+      return true;
+    }
     return item.uid === currentUid || (item.auditStatus !== "0" && item.auditStatus !== "2");
+  });
+  filteredRecords.forEach((item: any) => {
+    if (isVideoNote(item)) {
+      item.isLoading = true;
+    }
   });
   noteList.value.push(...filteredRecords);
 };

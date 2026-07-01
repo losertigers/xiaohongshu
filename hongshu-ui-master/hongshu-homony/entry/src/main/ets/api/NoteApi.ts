@@ -9,6 +9,23 @@ export class NoteApi {
     return HttpUtil.get<NoteItem>('/web/note/getNoteById?noteId=' + noteId);
   }
 
+  static guessMime(filePath: string): string {
+    const lower = (filePath || '').toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.gif')) return 'image/gif';
+    if (lower.endsWith('.bmp')) return 'image/bmp';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.mp4')) return 'video/mp4';
+    if (lower.endsWith('.mov')) return 'video/quicktime';
+    if (lower.endsWith('.webm')) return 'video/webm';
+    if (lower.endsWith('.ogg') || lower.endsWith('.ogv')) return 'video/ogg';
+    if (lower.endsWith('.m4v')) return 'video/mp4';
+    if (lower.endsWith('.avi')) return 'video/x-msvideo';
+    if (lower.endsWith('.flv')) return 'video/x-flv';
+    if (lower.endsWith('.wmv')) return 'video/x-ms-wmv';
+    return 'image/jpeg';
+  }
+
   static saveNote(noteData: string, filePaths: string[]): Promise<ApiResponse<void>> {
     return new Promise((resolve, reject) => {
       const httpRequest = http.createHttp();
@@ -24,11 +41,14 @@ export class NoteApi {
         { name: 'noteData', data: noteData, contentType: 'text/plain' }
       ];
       for (let i = 0; i < filePaths.length; i++) {
+        const filePath = filePaths[i];
+        const fileName = filePath.substring(filePath.lastIndexOf('/') + 1) || ('file_' + i);
+        const contentType = NoteApi.guessMime(filePath);
         multiFormDataList.push({
           name: 'uploadFiles',
-          contentType: 'image/jpeg',
-          filePath: filePaths[i],
-          remoteFileName: 'image_' + i + '.jpg'
+          contentType: contentType,
+          filePath: filePath,
+          remoteFileName: fileName
         });
       }
       const options: http.HttpRequestOptions = {

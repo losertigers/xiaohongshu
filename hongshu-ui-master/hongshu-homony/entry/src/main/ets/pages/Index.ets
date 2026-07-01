@@ -66,7 +66,7 @@ struct MinePage {
          .alignItems(VerticalAlign.Center)
       }
       List({ space: 0 }) {
-        ListItem() { this.menuItem('我的专辑', () => {}) }
+        ListItem() { this.menuItem('我的专辑', () => { router.pushUrl({ url: 'pages/user/Album' }); }) }
         ListItem() { this.menuItem('浏览记录', () => { router.pushUrl({ url: 'pages/user/BrowseRecord' }); }) }
         ListItem() { this.menuItem('编辑资料', () => { router.pushUrl({ url: 'pages/userinfo/UserInfo' }); }) }
         ListItem() { this.menuItem('设置', () => { router.pushUrl({ url: 'pages/setting/Setting' }); }) }

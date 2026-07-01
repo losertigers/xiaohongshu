@@ -142,17 +142,25 @@ public class WebUserServiceImpl extends ServiceImpl<WebUserMapper, WebUser> impl
 
 
         Set<String> uids = likeOrCollectionList.stream().map(WebLikeOrCollect::getPublishUid).collect(Collectors.toSet());
-        Map<String, WebUser> userMap = this.listByIds(uids).stream().collect(Collectors.toMap(WebUser::getId, user -> user));
+        Map<String, WebUser> userMap = uids.isEmpty() ? new java.util.HashMap<>() :
+                this.listByIds(uids).stream().collect(Collectors.toMap(WebUser::getId, user -> user));
 
         Set<String> nids = likeOrCollectionList.stream().map(WebLikeOrCollect::getLikeOrCollectionId).collect(Collectors.toSet());
-        Map<String, WebNote> noteMap = noteMapper.selectBatchIds(nids).stream().collect(Collectors.toMap(WebNote::getId, note -> note));
+        Map<String, WebNote> noteMap = nids.isEmpty() ? new java.util.HashMap<>() :
+                noteMapper.selectBatchIds(nids).stream().collect(Collectors.toMap(WebNote::getId, note -> note));
 
         List<NoteSearchVO> noteSearchVOList = new ArrayList<>();
 
         for (WebLikeOrCollect model : likeOrCollectionList) {
             WebNote note = noteMap.get(model.getLikeOrCollectionId());
+            if (note == null) {
+                continue;
+            }
             NoteSearchVO noteSearchVo = ConvertUtils.sourceToTarget(note, NoteSearchVO.class);
             WebUser user = userMap.get(model.getPublishUid());
+            if (user == null) {
+                continue;
+            }
             noteSearchVo.setUsername(user.getUsername())
                     .setIsLike(likeOrCollectionIds.contains(note.getId()))
                     .setAvatar(user.getAvatar());

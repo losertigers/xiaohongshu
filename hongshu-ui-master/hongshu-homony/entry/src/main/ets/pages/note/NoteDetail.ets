@@ -17,6 +17,7 @@ struct NoteDetailPage {
   @State commentList: CommentItem[] = [];
   @State commentText: string = '';
   @State images: string[] = [];
+  @State videoSrc: string = '';
   @State currentIdx: number = 0;
   @State isFollowed: boolean = false;
   @State currentUid: string = '';
@@ -50,16 +51,33 @@ struct NoteDetailPage {
       const res = await NoteApi.getNoteById(this.noteId);
       if (res.code === 200 && res.data) {
         this.note = res.data;
-        if (this.note.urls) {
-          const parsed: string[] = JSON.parse(this.note.urls) as string[];
-          this.images = parsed;
+        try {
+          if (this.note.urls) {
+            const parsed: string[] = JSON.parse(this.note.urls) as string[];
+            const firstUrl = parsed.length > 0 ? parsed[0] : '';
+            if (this.note.noteType === '1' && this.isVideoUrl(firstUrl)) {
+              this.videoSrc = firstUrl;
+              this.images = [];
+            } else {
+              this.videoSrc = '';
+              this.images = parsed;
+            }
+          } else {
+            this.videoSrc = '';
+            this.images = [];
+          }
+        } catch (parseErr) {
+          this.videoSrc = '';
+          this.images = [];
         }
         // Check follow status
         if (this.note.uid && this.note.uid !== this.currentUid) {
           this.checkFollow();
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      promptAction.showToast({ message: '加载笔记失败' });
+    }
   }
 
   async checkFollow() {
@@ -68,7 +86,17 @@ struct NoteDetailPage {
       if (res.code === 200) {
         this.isFollowed = res.data === true;
       }
-    } catch (e) {}
+    } catch (e) {
+      promptAction.showToast({ message: '查询关注状态失败' });
+    }
+  }
+
+  private isVideoUrl(url: string): boolean {
+    if (!url) {
+      return false;
+    }
+    const lower = url.toLowerCase();
+    return lower.indexOf('.mp4') !== -1 || lower.indexOf('.webm') !== -1 || lower.indexOf('.ogg') !== -1 || lower.indexOf('.mov') !== -1 || lower.indexOf('.m4v') !== -1 || lower.indexOf('.avi') !== -1 || lower.indexOf('.flv') !== -1 || lower.indexOf('.wmv') !== -1;
   }
 
   async toggleFollow() {
@@ -104,7 +132,9 @@ struct NoteDetailPage {
         const d: CommentPage = res.data as CommentPage;
         this.commentList = d.records ?? [];
       }
-    } catch (e) {}
+    } catch (e) {
+      promptAction.showToast({ message: '加载评论失败' });
+    }
   }
 
   async doComment() {
@@ -149,7 +179,9 @@ struct NoteDetailPage {
       });
       this.note.isLike = !this.note.isLike;
       this.note.likeCount += this.note.isLike ? 1 : -1;
-    } catch (e) {}
+    } catch (e) {
+      promptAction.showToast({ message: '点赞失败' });
+    }
   }
 
   build() {
@@ -160,7 +192,9 @@ struct NoteDetailPage {
       }.width('100%').height(48).padding({ left: 16 }).alignItems(VerticalAlign.Center)
       Scroll() {
         Column() {
-          if (this.images.length > 0) {
+          if (this.videoSrc) {
+            Video({ src: this.videoSrc }).width('100%').aspectRatio(1).backgroundColor(Color.Black).controls(true)
+          } else if (this.images.length > 0) {
             Swiper() {
               ForEach(this.images, (url: string, index: number) => {
                 Image(this.getSafeImage(url)).width('100%').aspectRatio(1).objectFit(ImageFit.Cover)

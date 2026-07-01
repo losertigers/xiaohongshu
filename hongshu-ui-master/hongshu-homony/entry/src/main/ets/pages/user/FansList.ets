@@ -42,7 +42,7 @@ struct FansListPage {
           newItem.username = item.username;
           newItem.avatar = item.avatar;
           newItem.description = item.description;
-          newItem.isfollow = item.isFollow !== undefined ? item.isFollow : false;
+          newItem.isfollow = item.isFollow !== undefined ? Boolean(item.isFollow) : false;
           newItem.fanCount = item.fanCount;
           newItem.followerCount = item.followerCount;
           newItem.likeCount = item.likeCount;

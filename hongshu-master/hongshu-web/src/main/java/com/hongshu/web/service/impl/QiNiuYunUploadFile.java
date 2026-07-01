@@ -73,23 +73,25 @@ public class QiNiuYunUploadFile implements OssFactory {
             Auth auth = Auth.create(accessKey, secretKey);
             String upToken = auth.uploadToken(bucketName);
             Response response = uploadManager.put(input, fileName, upToken, null, null);
+            if (!response.isOK()) {
+                throw new RuntimeException("七牛上传失败: " + response.bodyString());
+            }
             //解析上传成功的结果
             DefaultPutRet putRet = new Gson().fromJson(response.bodyString(), DefaultPutRet.class);
 
 //            filePath = "http://" + domain + "/" + putRet.key;
-            filePath = domain + "/" + putRet.key;
+            filePath = normalizeDomain(domain) + "/" + putRet.key;
             return filePath;
 
         } catch (Exception e) {
             e.printStackTrace();
+            throw new RuntimeException("七牛上传失败", e);
         }
-
-        return null;
     }
 
     @Override
     public Boolean delete(String path) {
-        String replaceFileName = path.replace("http://" + domain + "/", "");
+        String replaceFileName = extractKey(path);
         Configuration cfg = new Configuration(Region.autoRegion());
 
         Auth auth = Auth.create(accessKey, secretKey);
@@ -103,4 +105,29 @@ public class QiNiuYunUploadFile implements OssFactory {
         }
         return false;
     }
+
+    private String normalizeDomain(String domain) {
+        if (domain == null) {
+            return "";
+        }
+        return domain.startsWith("http://") || domain.startsWith("https://") ? domain : "http://" + domain;
+    }
+
+    private String extractKey(String path) {
+        if (path == null) {
+            return "";
+        }
+        String normalizedDomain = normalizeDomain(domain);
+        if (path.startsWith(normalizedDomain + "/")) {
+            return path.substring((normalizedDomain + "/").length());
+        }
+        if (path.startsWith("http://" + domain + "/")) {
+            return path.substring(("http://" + domain + "/").length());
+        }
+        if (path.startsWith("https://" + domain + "/")) {
+            return path.substring(("https://" + domain + "/").length());
+        }
+        return path;
+    }
 }
+

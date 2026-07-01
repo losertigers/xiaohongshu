@@ -3,9 +3,13 @@
     <div v-if="isLogin" class="push-container">
             <div class="header">
         <span class="header-icon"></span>
-        <span class="header-title">发布图文</span>
+        <span class="header-title">{{ publishMode === 'image' ? '发布图文' : '发布视频' }}</span>
+        <div class="mode-switch">
+          <button class="mode-btn" :class="{ active: publishMode === 'image' }" @click="switchMode('image')">图片</button>
+          <button class="mode-btn" :class="{ active: publishMode === 'video' }" @click="switchMode('video')">视频</button>
+        </div>
       </div>
-      <div class="img-list">
+      <div class="img-list" v-if="publishMode === 'image'">
         <el-upload
           v-model:file-list="fileList"
           action="http://localhost:88/api/util/oss/saveBatch/0"
@@ -23,6 +27,40 @@
 
         <el-dialog v-model="dialogVisible">
           <img w-full :src="dialogImageUrl" alt="Preview Image" />
+        </el-dialog>
+      </div>
+      <div class="video-list" v-if="publishMode === 'video'">
+        <el-upload
+          v-model:file-list="videoFileList"
+          action="http://localhost:88/api/util/oss/saveBatch/0"
+          list-type="picture-card"
+          :limit="1"
+          :headers="uploadHeader"
+          :auto-upload="false"
+          accept="video/*"
+          :on-exceed="handleVideoExceed"
+          :before-upload="beforeVideoUpload"
+        >
+          <el-icon>
+            <Plus />
+          </el-icon>
+          <template #file="{ file }">
+            <div class="video-preview-item">
+              <video class="video-preview" :src="file.url" muted></video>
+              <span class="el-upload-list__item-actions">
+                <span class="el-upload-list__item-preview" @click="handleVideoPreview(file)">
+                  <el-icon><ZoomIn /></el-icon>
+                </span>
+                <span class="el-upload-list__item-delete" @click="handleVideoRemove(file)">
+                  <el-icon><Delete /></el-icon>
+                </span>
+              </span>
+              <div class="video-badge">视频</div>
+            </div>
+          </template>
+        </el-upload>
+        <el-dialog v-model="videoPreviewVisible" title="视频预览" width="60%" destroy-on-close>
+          <video v-if="videoPreviewUrl" :src="videoPreviewUrl" controls autoplay style="width: 100%"></video>
         </el-dialog>
       </div>
       <el-divider style="margin: 0.75rem; width: 96%" />
@@ -131,7 +169,7 @@
 
 <script lang="ts" setup>
 import { ref, watch, nextTick, onMounted } from "vue";
-import { Plus } from "@element-plus/icons-vue";
+import { Plus, ZoomIn, Delete } from "@element-plus/icons-vue";
 import { useRoute } from "vue-router";
 import type { UploadUserFile, CascaderProps, ElInput } from "element-plus";
 import { ElMessage } from "element-plus";
@@ -160,6 +198,10 @@ const userStore = useUserStore();
 const route = useRoute();
 
 const fileList = ref<UploadUserFile[]>([]);
+const publishMode = ref<'image' | 'video'>('image');
+const videoFileList = ref<UploadUserFile[]>([]);
+const videoPreviewVisible = ref(false);
+const videoPreviewUrl = ref("");
 
 const dialogImageUrl = ref("");
 const dialogVisible = ref(false);
@@ -279,13 +321,22 @@ const getNoteByIdMethod = (noteId: string) => {
     const { data } = res;
     note.value = data;
     const urls = JSON.parse(data.urls);
-    urls.forEach((item: string) => {
-      const fileName = item.substring(item.lastIndexOf("/") + 1);
-
-      getFileFromUrl(item, fileName).then((res: any) => {
-        fileList.value.push({ name: fileName, url: item, raw: res });
+    publishMode.value = data.noteType === "1" ? "video" : "image";
+    if (publishMode.value === "video") {
+      const videoUrl = urls[0];
+      const fileName = videoUrl.substring(videoUrl.lastIndexOf("/") + 1);
+      getFileFromUrl(videoUrl, fileName).then((res: any) => {
+        videoFileList.value.push({ name: fileName, url: videoUrl, raw: res });
       });
-    });
+    } else {
+      urls.forEach((item: string) => {
+        const fileName = item.substring(item.lastIndexOf("/") + 1);
+
+        getFileFromUrl(item, fileName).then((res: any) => {
+          fileList.value.push({ name: fileName, url: item, raw: res });
+        });
+      });
+    }
     categoryList.value.push(data.cpid);
     categoryList.value.push(data.cid);
 
@@ -295,24 +346,86 @@ const getNoteByIdMethod = (noteId: string) => {
   });
 };
 
+const switchMode = (mode: 'image' | 'video') => {
+  publishMode.value = mode;
+  if (mode === "image") {
+    videoFileList.value = [];
+  } else {
+    fileList.value = [];
+  }
+};
+
+const handleVideoExceed = () => {
+  ElMessage.warning("只能上传 1 个视频文件");
+};
+
+const beforeVideoUpload = (file: File) => {
+  const isVideo = file.type.startsWith("video/");
+  if (!isVideo) {
+    ElMessage.error("请上传视频文件");
+    return false;
+  }
+  const isLt500M = file.size / 1024 / 1024 < 500;
+  if (!isLt500M) {
+    ElMessage.error("视频文件大小不能超过 500MB");
+    return false;
+  }
+  return true;
+};
+
+const handleVideoPreview = (file: any) => {
+  videoPreviewUrl.value = file.url;
+  videoPreviewVisible.value = true;
+};
+
+const handleVideoRemove = (file: any) => {
+  const index = videoFileList.value.indexOf(file);
+  if (index !== -1) {
+    videoFileList.value.splice(index, 1);
+  }
+};
+
 // upload
 const pubslish = () => {
-  if (fileList.value.length <= 0 || note.value.title === null || categoryList.value.length <= 0) {
-    ElMessage.error("请选择图片，标签，分类～");
-    return;
+  if (publishMode.value === "image") {
+    if (fileList.value.length <= 0 || note.value.title === null || categoryList.value.length <= 0) {
+      ElMessage.error("请选择图片，标签，分类～");
+      return;
+    }
+  } else {
+    if (videoFileList.value.length <= 0 || note.value.title === null || categoryList.value.length <= 0) {
+      ElMessage.error("请选择视频，标签，分类～");
+      return;
+    }
   }
   pushLoading.value = true;
   let params = new FormData();
+  note.value.type = 1;
+  note.value.cpid = categoryList.value[0];
+  note.value.cid = categoryList.value[1];
+  note.value.tagList = dynamicTags.value;
+
+  if (publishMode.value === "video") {
+    params.append("uploadFiles", videoFileList.value[0].raw as any);
+    note.value.count = 1;
+    note.value.noteType = "1";
+    note.value.noteCoverHeight = 300;
+    const noteData = JSON.stringify(note.value);
+    params.append("noteData", noteData);
+    if (note.value.id !== null && note.value.id !== undefined) {
+      updateNote(params);
+    } else {
+      saveNote(params);
+    }
+    return;
+  }
+
   fileList.value.forEach((file: any) => {
     params.append("uploadFiles", file.raw);
   });
   note.value.count = fileList.value.length;
   note.value.noteType = "0";
-  note.value.type = 1;
   // note.value.content = document.getElementById("post-textarea")!.innerHTML.replace(/<[^>]*>[^<]*(<[^>]*>)?/gi, "");
-  note.value.cpid = categoryList.value[0];
-  note.value.cid = categoryList.value[1];
-  note.value.tagList = dynamicTags.value;
   const coverImage = new Image();
   coverImage.src = fileList.value[0].url!;
   coverImage.onload = () => {
@@ -360,6 +473,8 @@ const resetData = () => {
   note.value = {};
   categoryList.value = [];
   fileList.value = [];
+  videoFileList.value = [];
+  publishMode.value = "image";
   pushLoading.value = false;
   dynamicTags.value = [];
 };
@@ -434,12 +549,96 @@ a {
       .header-title {
         margin-right: 16px;
       }
+
+      .mode-switch {
+        display: flex;
+        gap: 4px;
+        margin-left: auto;
+
+        .mode-btn {
+          padding: 4px 12px;
+          border: 1px solid #d9d9d9;
+          border-radius: 4px;
+          background: #fff;
+          cursor: pointer;
+          font-size: 12px;
+          color: #666;
+          transition: all 0.2s;
+
+          &:hover {
+            color: #ff2442;
+            border-color: #ff2442;
+          }
+
+          &.active {
+            background: #ff2442;
+            color: #fff;
+            border-color: #ff2442;
+          }
+        }
+      }
     }
 
     .img-list {
       width: 650px;
       margin: auto;
       padding: 6px 6px 6px 6px;
+    }
+
+    .video-list {
+      width: 650px;
+      margin: auto;
+      padding: 6px;
+
+      .video-preview-item {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        overflow: hidden;
+        border-radius: 4px;
+
+        .video-preview {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .video-badge {
+          position: absolute;
+          bottom: 4px;
+          left: 4px;
+          background: rgba(0, 0, 0, 0.6);
+          color: #fff;
+          font-size: 10px;
+          padding: 1px 4px;
+          border-radius: 2px;
+        }
+
+        .el-upload-list__item-actions {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          opacity: 0;
+          transition: opacity 0.2s;
+          background: rgba(0, 0, 0, 0.4);
+
+          &:hover {
+            opacity: 1;
+          }
+
+          span {
+            cursor: pointer;
+            color: #fff;
+            font-size: 18px;
+          }
+        }
+      }
     }
 
         .push-content {

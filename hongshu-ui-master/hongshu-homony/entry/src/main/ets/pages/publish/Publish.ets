@@ -13,8 +13,34 @@ struct PublishPage {
   @State publishMode: string = 'image';
   @State selectedImages: string[] = [];
   @State imagePreviewUris: string[] = [];
+  @State selectedVideo: string = '';
+  @State videoPreviewUri: string = '';
   @State publishing: boolean = false;
   private context = getContext(this) as common.UIAbilityContext;
+
+  async pickVideo() {
+    try {
+      const photoPicker = new picker.PhotoViewPicker();
+      const result = await photoPicker.select({
+        maxSelectNumber: 1,
+        MIMEType: picker.PhotoViewMIMETypes.VIDEO_TYPE
+      });
+      if (result && result.photoUris && result.photoUris.length > 0) {
+        const uri = result.photoUris[0];
+        const cachePath = await this.copyToCache(uri);
+        if (cachePath) {
+          this.selectedVideo = cachePath;
+          this.videoPreviewUri = uri;
+          promptAction.showToast({ message: '已选择 1 个视频' });
+        } else {
+          promptAction.showToast({ message: '选择视频失败' });
+        }
+      }
+    } catch (e) {
+      const errMsg = (e instanceof Error) ? e.message : '未知错误';
+      promptAction.showToast({ message: '选择视频失败：' + errMsg });
+    }
+  }
 
   async pickImages() {
     try {
@@ -63,7 +89,11 @@ struct PublishPage {
       promptAction.showToast({ message: '请输入描述内容' });
       return;
     }
-    if (this.selectedImages.length === 0) {
+    if (this.publishMode === 'video' && !this.selectedVideo) {
+      promptAction.showToast({ message: '请选择一个视频' });
+      return;
+    }
+    if (this.publishMode === 'image' && this.selectedImages.length === 0) {
       promptAction.showToast({ message: '请至少选择一张图片' });
       return;
     }
@@ -72,12 +102,13 @@ struct PublishPage {
       const noteData = JSON.stringify({
         title: this.title,
         content: this.content,
-        noteType: '0',
+        noteType: this.publishMode === 'video' ? '1' : '0',
         cid: '1',
         cpid: '1',
         tagList: []
       });
-      const res = await NoteApi.saveNote(noteData, this.selectedImages);
+      const filePaths = this.publishMode === 'video' ? [this.selectedVideo] : this.selectedImages;
+      const res = await NoteApi.saveNote(noteData, filePaths);
       if (res && res.code === 200) {
         promptAction.showToast({ message: '发布成功' });
         router.back();
@@ -105,11 +136,11 @@ struct PublishPage {
         Button('图片').fontSize(13).height(30).borderRadius(15)
           .backgroundColor(this.publishMode === 'image' ? '#FF2442' : '#f5f5f5')
           .fontColor(this.publishMode === 'image' ? Color.White : '#666')
-          .onClick(() => { this.publishMode = 'image'; })
+          .onClick(() => { this.publishMode = 'image'; this.selectedVideo = ''; this.videoPreviewUri = ''; })
         Button('视频').fontSize(13).height(30).borderRadius(15)
           .backgroundColor(this.publishMode === 'video' ? '#FF2442' : '#f5f5f5')
           .fontColor(this.publishMode === 'video' ? Color.White : '#666')
-          .margin({ left: 8 }).onClick(() => { this.publishMode = 'video'; })
+          .margin({ left: 8 }).onClick(() => { this.publishMode = 'video'; this.selectedImages = []; this.imagePreviewUris = []; })
       }.width('100%').padding({ left: 16, right: 16, top: 12, bottom: 12 })
       Divider()
       Scroll() {
@@ -141,13 +172,26 @@ struct PublishPage {
               }
             }.padding({ left: 16, right: 16 })
           } else {
-            Column() {
-              Text('+').fontSize(28).fontColor('#ccc')
-              Text('添加视频').fontSize(12).fontColor('#999').margin({ top: 4 })
-            }.width(160).height(160).borderRadius(8)
-             .border({ width: 1, color: '#ddd', style: BorderStyle.Dashed })
-             .justifyContent(FlexAlign.Center).margin({ left: 16 })
-             .onClick(() => { promptAction.showToast({ message: '视频上传暂不支持' }); })
+            if (this.videoPreviewUri) {
+              Stack({ alignContent: Alignment.TopEnd }) {
+                Image(this.videoPreviewUri).width(160).height(160).borderRadius(8).objectFit(ImageFit.Cover)
+                Text('X').fontSize(12).fontColor(Color.White).width(20).height(20)
+                  .backgroundColor('#999').borderRadius(10).textAlign(TextAlign.Center)
+                  .margin({ top: 2, right: 2 })
+                  .onClick(() => {
+                    this.videoPreviewUri = '';
+                    this.selectedVideo = '';
+                  })
+              }.margin({ left: 16 })
+            } else {
+              Column() {
+                Text('+').fontSize(28).fontColor('#ccc')
+                Text('添加视频').fontSize(12).fontColor('#999').margin({ top: 4 })
+              }.width(160).height(160).borderRadius(8)
+               .border({ width: 1, color: '#ddd', style: BorderStyle.Dashed })
+               .justifyContent(FlexAlign.Center).margin({ left: 16 })
+               .onClick(() => { this.pickVideo(); })
+            }
           }
           TextInput({ placeholder: '请输入标题', text: this.title })
             .width('100%').height(48).margin({ top: 16 }).maxLength(20)

@@ -10,6 +10,7 @@
   urls: string;
   count: number;
   type: number;
+  noteType: string;
   likeCount: number;
   time: number | string;
 }
@@ -24,6 +25,7 @@ export interface NoteInfo {
   avatar: string;
   imgList: Array<string>;
   type: number;
+  noteType: string;
   likeCount: number;
   collectionCount: number;
   commentCount: number;

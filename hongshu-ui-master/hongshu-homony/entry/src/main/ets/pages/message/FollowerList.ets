@@ -30,7 +30,21 @@ struct FollowerListPage {
     try {
       const res = await FollowApi.getFriend(1, 50, 0); // type=0: 新增关注（粉丝）
       if (res.code === 200 && res.data && res.data.records) {
-        this.followerList = res.data.records;
+        const list: FollowerItem[] = [];
+        const records = res.data.records;
+        for (let i = 0; i < records.length; i++) {
+          const item = records[i];
+          const newItem = new FollowerItem();
+          newItem.id = item.id;
+          newItem.uid = item.uid;
+          newItem.username = item.username;
+          newItem.avatar = item.avatar;
+          newItem.description = item.description;
+          newItem.time = item.time;
+          newItem.isfollow = item.isFollow !== undefined ? Boolean(item.isFollow) : Boolean(item.isfollow);
+          list.push(newItem);
+        }
+        this.followerList = list;
       }
     } catch (e) {
       const errMsg = (e instanceof Error) ? e.message : '未知错误';
@@ -42,11 +56,19 @@ struct FollowerListPage {
     const item = this.followerList[index];
     try {
       if (item.isfollow) {
-        await FollowApi.clearFollow(item.uid);
-        this.followerList[index].isfollow = false;
+        const res = await FollowApi.clearFollow(item.uid);
+        if (res && res.code === 200) {
+          this.followerList[index].isfollow = false;
+        } else {
+          promptAction.showToast({ message: res?.message || '取消关注失败' });
+        }
       } else {
-        await FollowApi.followUser(item.uid);
-        this.followerList[index].isfollow = true;
+        const res = await FollowApi.followUser(item.uid);
+        if (res && res.code === 200) {
+          this.followerList[index].isfollow = true;
+        } else {
+          promptAction.showToast({ message: res?.message || '关注失败' });
+        }
       }
     } catch (e) {
       const errMsg = (e instanceof Error) ? e.message : '未知错误';

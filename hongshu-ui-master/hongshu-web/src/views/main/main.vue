@@ -3,7 +3,7 @@
     <div class="note-container">
       <div class="media-container">
         <video
-          v-if="noteInfo.noteType === '1' && noteInfo.imgList && noteInfo.imgList.length > 0"
+          v-if="isVideoNote()"
           :src="noteInfo.imgList[0]"
           controls
           autoplay
@@ -224,6 +224,14 @@ const likeOrComment = ref({
   isLike: false,
   isComment: false,
 });
+
+const isVideoUrl = (url: string) => {
+  return /\.(mp4|webm|ogg|mov|m4v|avi|flv|wmv)(\?.*)?$/i.test(url || "");
+};
+
+const isVideoNote = () => {
+  return noteInfo.value.noteType === "1" && noteInfo.value.imgList && noteInfo.value.imgList.length > 0 && isVideoUrl(noteInfo.value.imgList[0]);
+};
 
 watch(
   () => [props.nowTime],

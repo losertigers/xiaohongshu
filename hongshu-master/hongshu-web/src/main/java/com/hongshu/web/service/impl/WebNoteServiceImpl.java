@@ -165,7 +165,10 @@ public class WebNoteServiceImpl extends ServiceImpl<WebNoteMapper, WebNote> impl
             dataList = ossService.saveBatch(files);
         } catch (Exception e) {
             log.error("图片上传失败");
-            e.printStackTrace();
+            throw new RuntimeException("文件上传失败", e);
+        }
+        if (dataList == null || dataList.isEmpty()) {
+            throw new RuntimeException("文件上传失败");
         }
         String[] urlArr = Objects.requireNonNull(dataList).toArray(new String[dataList.size()]);
         String urls = JSONUtil.toJsonStr(urlArr);
@@ -230,6 +233,10 @@ public class WebNoteServiceImpl extends ServiceImpl<WebNoteMapper, WebNote> impl
             dataList = ossService.saveBatch(files);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new RuntimeException("文件上传失败", e);
+        }
+        if (dataList == null || dataList.isEmpty()) {
+            throw new RuntimeException("文件上传失败");
         }
         // 删除原来图片的地址
         String urls = note.getUrls();

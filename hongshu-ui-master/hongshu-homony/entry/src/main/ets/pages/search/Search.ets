@@ -1,4 +1,5 @@
 import { router } from '@kit.ArkUI';
+import { promptAction } from '@kit.ArkUI';
 import { SearchApi } from '../../api/SearchApi';
 import { NoteApi } from '../../api/NoteApi';
 import { NoteItem } from '../../model/Note';
@@ -21,7 +22,9 @@ struct SearchPage {
         const list: HotSearchItem[] = res.data as HotSearchItem[];
         this.hotTags = list.map((item: HotSearchItem) => item.keyword);
       }
-    } catch (e) {}
+    } catch (e) {
+      promptAction.showToast({ message: '加载热搜失败' });
+    }
   }
 
   async doSearch() {
@@ -32,8 +35,13 @@ struct SearchPage {
       if (res.code === 200 && res.data && res.data.records) {
         this.resultNotes = res.data.records;
         this.showResult = true;
+        if (this.resultNotes.length === 0) {
+          promptAction.showToast({ message: '未找到相关笔记' });
+        }
       }
-    } catch (e) {}
+    } catch (e) {
+      promptAction.showToast({ message: '搜索失败' });
+    }
   }
 
   build() {
@@ -69,7 +77,7 @@ struct SearchPage {
                   Text(note.username).fontSize(12).fontColor('#999').margin({ top: 4 })
                 }.layoutWeight(1).margin({ left: 12 }).alignItems(HorizontalAlign.Start)
               }.padding(12).backgroundColor('#fff').borderRadius(8)
-               .onClick(() => { router.pushUrl({ url: 'pages/note/NoteDetail?noteId=' + note.id }); })
+               .onClick(() => { router.pushUrl({ url: 'pages/note/NoteDetail', params: { noteId: note.id } }); })
             }
           })
         }.width('100%').layoutWeight(1).padding(8)

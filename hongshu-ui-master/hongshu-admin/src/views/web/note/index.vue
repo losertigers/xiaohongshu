@@ -225,6 +225,14 @@
         min-width="200"
       >
         <template #default="scope">
+          <el-tooltip v-if="isVideoRow(scope.row)" content="预览视频" placement="top">
+            <el-button
+              type="primary"
+              icon="View"
+              size="small"
+              @click="handleVideoPreview(scope.row)"
+            />
+          </el-tooltip>
           <el-tooltip content="编辑" placement="top">
             <el-button
               type="primary"
@@ -259,6 +267,11 @@
     <div v-if="previewVisible" class="image-preview" :style="previewStyle">
       <img :src="previewSrc" alt="Preview" />
     </div>
+
+    <!-- 视频预览对话框 -->
+    <el-dialog v-model="videoPreviewVisible" title="视频预览" width="60%" destroy-on-close>
+      <video v-if="videoPreviewUrl" :src="videoPreviewUrl" controls autoplay style="width: 100%"></video>
+    </el-dialog>
 
     <!-- 添加或修改笔记对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
@@ -428,6 +441,34 @@ function showPreview(src, event) {
 function hidePreview() {
   previewVisible.value = false;
   previewSrc.value = "";
+}
+
+/** 视频预览 */
+function getFirstMediaUrl(row) {
+  try {
+    const urls = JSON.parse(row.urls || "[]");
+    return urls.length > 0 ? urls[0] : "";
+  } catch (e) {
+    return "";
+  }
+}
+
+function isVideoUrl(url) {
+  return /\.(mp4|webm|ogg|mov|m4v|avi|flv|wmv)(\?.*)?$/i.test(url || "");
+}
+
+function isVideoRow(row) {
+  return row.noteType === "1" && isVideoUrl(getFirstMediaUrl(row));
+}
+
+function handleVideoPreview(row) {
+  const videoUrl = getFirstMediaUrl(row);
+  if (isVideoUrl(videoUrl)) {
+    videoPreviewUrl.value = videoUrl;
+    videoPreviewVisible.value = true;
+  } else {
+    proxy.$modal.msgError("视频地址不存在");
+  }
 }
 
 /** ES重置 */

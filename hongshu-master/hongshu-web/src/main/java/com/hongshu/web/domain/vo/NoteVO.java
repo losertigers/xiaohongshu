@@ -42,6 +42,9 @@ public class NoteVO implements Serializable {
     //类型（图片或视频）
     private Integer type;
 
+    //笔记类型（0：图片 1：视频）
+    private String noteType;
+
     private Long likeCount;
 
     private Long collectionCount;
